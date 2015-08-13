@@ -29,6 +29,7 @@ import java.util.Iterator;
 import java.util.Set;
 
 import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
 import org.bukkit.GameMode;
 import org.bukkit.Location;
 import org.bukkit.Material;
@@ -38,6 +39,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.map.MapView;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
 
@@ -54,6 +56,7 @@ public class Main extends JavaPlugin implements Listener {
 		this.getLogger().info("GunAPI by wordnice was disabled!");
 	}
 	
+	public MapView mw = null;
 	
 	@EventHandler
 	public void onPlayerSneak(PlayerToggleSneakEvent event) {
@@ -61,29 +64,46 @@ public class Main extends JavaPlugin implements Listener {
 		if(event.isSneaking() && p.isOp() && p.getGameMode() == GameMode.CREATIVE) {
 			ItemStack item = p.getItemInHand();
 			if(item != null && item.getType() == Material.PORK && item.getAmount() == 33) {
-				Location loc = p.getLocation();
+				Location loc = p.getEyeLocation(); //!!! It is NOT getLocation()
 				Vector direct = loc.getDirection();
-				Set<ShootedEntity> ents = new HashSet<ShootedEntity>();
+				
+				Set<ShootedEntity> ents = new HashSet<ShootedEntity>(); //There will be cached all living entities from world
 				GunAPI.cacheEntities(ents, loc.getWorld().getEntities());
-				Set<ShootedEntity> shoted = new HashSet<ShootedEntity>();
-				GunAPI.getShootedEntities(shoted, ents, new double[] {loc.getX(), loc.getY(), loc.getZ()}, 
-						new double[] {direct.getX(), direct.getY(), direct.getZ()}, 50);
+				
+				double[] location = new double[] {loc.getX(), loc.getY(), loc.getZ()}; //double[3] location
+				double[] vector = new double[] {direct.getX(), direct.getY(), direct.getZ()}; //double[3] direction
+				GunAPI.normalize(vector, 0.1); //For better search (smaller = better)
+				
+				int radius = 50;
+				int cycles = GunAPI.cyclesFromRadius(vector, radius);
+				
+				Set<ShootedEntity> shoted = new HashSet<ShootedEntity>(); //There will be saved shoted entities
+				GunAPI.getShootedEntities(shoted, ents, location, vector, cycles);
+				
+				boolean shootSomeone = false;
 				
 				Iterator<ShootedEntity> it = shoted.iterator();
-				boolean hadShooted = false;
 				while(it.hasNext()) {
-					hadShooted = true;
 					ShootedEntity se = it.next();
 					LivingEntity le = se.ent;
+					if(le.equals(p)) {
+						continue;
+					}
+					shootSomeone = true;
 					if(le instanceof Player) {
 						Player sp = (Player) le;
-						p.sendMessage("You shoot player " + sp.getName() + ", headshot: " + se.wasHeadshot);
+						p.sendMessage(ChatColor.YELLOW + "You shoot player " + sp.getName() + ", headshot: " + se.wasHeadshot);
 					} else {
-						p.sendMessage("You shoot entity " + le.getType().toString() + ", headshot: " + se.wasHeadshot);
+						p.sendMessage(ChatColor.YELLOW + "You shoot entity " + le.getType().toString() + ", headshot: " + se.wasHeadshot);
+					}
+					if(se.wasHeadshot) {
+						le.damage(10.01);
+					} else {
+						le.damage(3.01);
 					}
 				}
-				if(!hadShooted) {
-					p.sendMessage("You didnt shoot anyone! Uf.");
+				if(!shootSomeone) {
+					p.sendMessage(ChatColor.GREEN + "Uf, you didn't hurt anyone!");
 				}
 			}
 		}

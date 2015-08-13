@@ -34,6 +34,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Slime;
 
 public class GunAPI {
 	
@@ -117,7 +118,7 @@ public class GunAPI {
 		clz = handle.getClass();
 		while(clz != null) {
 			try {
-				Field f = clz.getDeclaredField("length");
+				Field f = clz.getDeclaredField(name);
 				f.setAccessible(true);
 				return ((Number) f.get(handle)).doubleValue();
 			} catch(Throwable t) {}
@@ -134,7 +135,10 @@ public class GunAPI {
 	 * @return Entity width
 	 */
 	public static double getMobWidth(LivingEntity e) {
-		return getEntityHandleField(e, "width");
+		try {
+			return (getEntityHandleField(e, "width") + 0.3);
+		} catch(Throwable t) {}
+		return 0.9;
 	}
 	
 	/*
@@ -143,7 +147,13 @@ public class GunAPI {
 	 * @return Entity height
 	 */
 	public static double getMobHeight(LivingEntity e) {
-		return 0.9d;
+		try {
+			double he = getEntityHandleField(e, "height");
+			if(he != 0) {
+				return he;
+			}
+		} catch(Throwable t) {}
+		return 0.4;
 	}
 	
 	/*
@@ -152,7 +162,10 @@ public class GunAPI {
 	 * @return Entity length
 	 */
 	public static double getMobLength(LivingEntity e) {
-		return getEntityHandleField(e, "length");
+		try {
+			return getEntityHandleField(e, "length");
+		} catch(Throwable t) {}
+		return 1.8;
 	}
 	
 	/*
@@ -161,9 +174,20 @@ public class GunAPI {
 	 * @return Entity head size (one side)
 	 */
 	public static double getMobHeadSize(LivingEntity e) {
+		if(e instanceof Slime) {
+			return 0;
+		}
 		return 0.5d;
 	}
 	
+	/*
+	 * Modify minecraft angle to work propertly with other code
+	 * 
+	 * @return Modified angle (yaw)
+	 */
+	public static double correctAngle(double in) {
+		return (360 - (in % 360));
+	}
 	
 	/*
 	 * Rotate point (x, y) stored in first arr parameter by given angle
@@ -171,8 +195,6 @@ public class GunAPI {
 	 * @return nothing. Values are stored in arr
 	 */
 	public static void rotatePoint2D(double[] arr, double angle) {
-		angle += 90d + 180d;
-		angle %= 360d;
 		angle = Math.toRadians(angle);
 		double cos = Math.cos(angle);
 		double sin = Math.sin(angle);
@@ -352,8 +374,8 @@ public class GunAPI {
 	 * @return nothing. Shooted entities are added into first out parameter
 	 */
 	public static void getShootedEntities(Collection<ShootedEntity> out, 
-			Collection<ShootedEntity> in, double[] loc, double[] vec, int radius) {
-		while(radius-- != 0) {
+			Collection<ShootedEntity> in, double[] loc, double[] vec, int cycles) {
+		while(cycles-- != 0) {
 			Iterator<ShootedEntity> it = in.iterator();
 			while(it.hasNext()) {
 				ShootedEntity sec = it.next();
@@ -381,10 +403,10 @@ public class GunAPI {
 	 * @return nothing. Shooted blocks are added into first out parameter
 	 */
 	public static void getShootedBlocks(Collection<Block> out, 
-			World w, double[] loc, double[] vec, int radius) {
+			World w, double[] loc, double[] vec, int cycles) {
 		int[] prev = new int[] { Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE };
 		int[] cur = new int[3];
-		while(radius-- != 0) {
+		while(cycles-- != 0) {
 			cur[0] = Location.locToBlock(loc[0]);
 			cur[1] = Location.locToBlock(loc[1]);
 			cur[2] = Location.locToBlock(loc[2]);
