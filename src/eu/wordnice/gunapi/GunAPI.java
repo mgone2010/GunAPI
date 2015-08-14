@@ -39,6 +39,19 @@ import org.bukkit.entity.Slime;
 public class GunAPI {
 	
 	/*
+	 * Cached fields - make reflection faster
+	 */
+	private static Method handleMethod = null;
+	private static Field lengthField = null;
+	private static Field heightField = null;
+	private static Field widthField = null;
+	
+	private static double widthDefault = 0.9;
+	private static double heightDefault = 0.4;
+	private static double lengthDefault = 1.8;
+	private static double headDefault = 0.5;
+	
+	/*
 	 * isPointIn method was derived from 
 	 * http://www.ecse.rpi.edu/Homepages/wrf/Research/Short_Notes/pnpoly.html
 	 * 
@@ -96,37 +109,39 @@ public class GunAPI {
 	}
 	
 	/*
-	 * Version-indepent of `return ((CraftLivingEntity) e).getHandle().<name>`
+	 * Version-indepent of `return ((CraftLivingEntity) entity).getHandle()`
 	 * 
-	 * @return `return ((CraftLivingEntity) e).getHandle().<name>`
+	 * @return ((CraftLivingEntity) entity).getHandle()
 	 */
-	public static double getEntityHandleField(Entity e, String name) {
+	public static Object getEntityHandle(Entity e) {
 		Class<?> clz = e.getClass();
-		Object handle = null;
+		if(GunAPI.handleMethod != null) {
+			try {
+				return GunAPI.handleMethod.invoke(e);
+			} catch(Throwable t) {}
+		}
+		Method first = null;
 		while(clz != null) {
 			try {
 				Method m = clz.getDeclaredMethod("getHandle");
 				m.setAccessible(true);
-				handle = m.invoke(e);
+				if(first == null) {
+					first = m;
+				}
+				if(clz.getName().endsWith(".CraftEntity") || clz.getName().endsWith(".Entity")) {
+					Object handle = m.invoke(e);
+					GunAPI.handleMethod = m;
+					return handle;
+				}
 			} catch(Throwable t) {}
 			clz = clz.getSuperclass();
 		}
-		if(handle == null) {
-			throw new NullPointerException("Cannot get & call method getHandle() for entity "
-					+ ((e == null) ? null : e.getClass()) + " / " + e);
-		}
-		clz = handle.getClass();
-		while(clz != null) {
-			try {
-				Field f = clz.getDeclaredField(name);
-				f.setAccessible(true);
-				return ((Number) f.get(handle)).doubleValue();
-			} catch(Throwable t) {}
-			clz = clz.getSuperclass();
-		}
-		throw new NullPointerException("Cannot get field " + name + " for entity: "
-				+ ((e == null) ? null : e.getClass()) + " / " + e + "; handle: "
-				+ ((handle == null) ? null : handle.getClass()) + " / " + handle);
+		try {
+			Object handle = first.invoke(e);
+			GunAPI.handleMethod = first;
+			return handle;
+		} catch(Throwable t) {}
+		return null;
 	}
 	
 	/*
@@ -136,9 +151,27 @@ public class GunAPI {
 	 */
 	public static double getMobWidth(LivingEntity e) {
 		try {
-			return (getEntityHandleField(e, "width") + 0.3);
+			Object handle = GunAPI.getEntityHandle(e);
+			if(GunAPI.widthField != null) {
+				try {
+					return (((Number) GunAPI.widthField.get(handle)).doubleValue() + 0.3);
+				} catch(Throwable t2) {}
+			}
+			if(GunAPI.widthField == null) {
+				Class<?> hc = handle.getClass();
+				while(hc != null) {
+					try {
+						Field f = hc.getDeclaredField("width");
+						f.setAccessible(true);
+						double n = ((Number) f.get(handle)).doubleValue();
+						GunAPI.widthField = f;
+						return (n + 0.3);
+					} catch(Throwable t3) {}
+					hc = hc.getSuperclass();
+				}
+			}
 		} catch(Throwable t) {}
-		return 0.9;
+		return GunAPI.widthDefault;
 	}
 	
 	/*
@@ -148,12 +181,34 @@ public class GunAPI {
 	 */
 	public static double getMobHeight(LivingEntity e) {
 		try {
-			double he = getEntityHandleField(e, "height");
-			if(he != 0) {
-				return he;
-			}
+			try {
+				Object handle = GunAPI.getEntityHandle(e);
+				if(GunAPI.heightField != null) {
+					try {
+						double ret = ((Number) GunAPI.heightField.get(handle)).doubleValue();
+						if(ret != 0) {
+							return ret;
+						}
+						return GunAPI.heightDefault;
+					} catch(Throwable t2) {}
+				}
+				Class<?> hc = handle.getClass();
+				while(hc != null) {
+					try {
+						Field f = hc.getDeclaredField("height");
+						f.setAccessible(true);
+						double n = ((Number) f.get(handle)).doubleValue();
+						GunAPI.heightField = f;
+						if(n != 0) {
+							return n;
+						}
+						return GunAPI.heightDefault;
+					} catch(Throwable t3) {}
+					hc = hc.getSuperclass();
+				}
+			} catch(Throwable t) {}
 		} catch(Throwable t) {}
-		return 0.4;
+		return GunAPI.heightDefault;
 	}
 	
 	/*
@@ -163,9 +218,27 @@ public class GunAPI {
 	 */
 	public static double getMobLength(LivingEntity e) {
 		try {
-			return getEntityHandleField(e, "length");
+			Object handle = GunAPI.getEntityHandle(e);
+			if(GunAPI.lengthField != null) {
+				try {
+					return (((Number) GunAPI.lengthField.get(handle)).doubleValue() + 0.3);
+				} catch(Throwable t2) {}
+			}
+			if(GunAPI.lengthField == null) {
+				Class<?> hc = handle.getClass();
+				while(hc != null) {
+					try {
+						Field f = hc.getDeclaredField("length");
+						f.setAccessible(true);
+						double n = ((Number) f.get(handle)).doubleValue();
+						GunAPI.lengthField = f;
+						return (n + 0.3);
+					} catch(Throwable t3) {}
+					hc = hc.getSuperclass();
+				}
+			}
 		} catch(Throwable t) {}
-		return 1.8;
+		return GunAPI.lengthDefault;
 	}
 	
 	/*
@@ -177,7 +250,7 @@ public class GunAPI {
 		if(e instanceof Slime) {
 			return 0;
 		}
-		return 0.5d;
+		return GunAPI.headDefault;
 	}
 	
 	/*
@@ -186,7 +259,7 @@ public class GunAPI {
 	 * @return Modified angle (yaw)
 	 */
 	public static double correctAngle(double in) {
-		return (360 - (in % 360));
+		return (360 - ((in + 360) % 360)) + 90;
 	}
 	
 	/*
