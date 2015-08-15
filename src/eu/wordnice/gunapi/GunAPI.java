@@ -28,13 +28,17 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Set;
 
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.block.Block;
+import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Silverfish;
 import org.bukkit.entity.Slime;
+import org.bukkit.entity.Wolf;
 
 public class GunAPI {
 	
@@ -49,7 +53,20 @@ public class GunAPI {
 	private static double widthDefault = 0.9;
 	private static double heightDefault = 0.4;
 	private static double lengthDefault = 1.8;
-	private static double headDefault = 0.5;
+	
+	private static double headWidthDefault = 0.5;
+	private static double headHeightDefault = 0.5;
+	private static double headLengthDefault = 0.55;
+	
+	/*
+	 * walk(...) and walk3D(...) method parameter appenders
+	 * 
+	 * Use as: walk(yaw + WALK_xxx)
+	 */
+	public static double WALK_STRAIGHT = 0;
+	public static double WALK_RIGHT = 90;
+	public static double WALK_BACK = 180;
+	public static double WALK_LEFT = 270;
 	
 	/*
 	 * isPointIn method was derived from 
@@ -109,9 +126,9 @@ public class GunAPI {
 	}
 	
 	/*
-	 * Version-indepent of `return ((CraftLivingEntity) entity).getHandle()`
+	 * Version-indepent of `return ((CraftEntity) entity).getHandle()`
 	 * 
-	 * @return ((CraftLivingEntity) entity).getHandle()
+	 * @return ((CraftEntity) entity).getHandle()
 	 */
 	public static Object getEntityHandle(Entity e) {
 		Class<?> clz = e.getClass();
@@ -149,7 +166,7 @@ public class GunAPI {
 	 * 
 	 * @return Entity width
 	 */
-	public static double getMobWidth(LivingEntity e) {
+	public static double getWidth(Entity e) {
 		try {
 			Object handle = GunAPI.getEntityHandle(e);
 			if(GunAPI.widthField != null) {
@@ -157,18 +174,16 @@ public class GunAPI {
 					return (((Number) GunAPI.widthField.get(handle)).doubleValue() + 0.3);
 				} catch(Throwable t2) {}
 			}
-			if(GunAPI.widthField == null) {
-				Class<?> hc = handle.getClass();
-				while(hc != null) {
-					try {
-						Field f = hc.getDeclaredField("width");
-						f.setAccessible(true);
-						double n = ((Number) f.get(handle)).doubleValue();
-						GunAPI.widthField = f;
-						return (n + 0.3);
-					} catch(Throwable t3) {}
-					hc = hc.getSuperclass();
-				}
+			Class<?> hc = handle.getClass();
+			while(hc != null) {
+				try {
+					Field f = hc.getDeclaredField("width");
+					f.setAccessible(true);
+					double n = ((Number) f.get(handle)).doubleValue();
+					GunAPI.widthField = f;
+					return (n + 0.3);
+				} catch(Throwable t3) {}
+				hc = hc.getSuperclass();
 			}
 		} catch(Throwable t) {}
 		return GunAPI.widthDefault;
@@ -179,7 +194,7 @@ public class GunAPI {
 	 * 
 	 * @return Entity height
 	 */
-	public static double getMobHeight(LivingEntity e) {
+	public static double getHeight(Entity e) {
 		try {
 			try {
 				Object handle = GunAPI.getEntityHandle(e);
@@ -216,41 +231,82 @@ public class GunAPI {
 	 * 
 	 * @return Entity length
 	 */
-	public static double getMobLength(LivingEntity e) {
+	public static double getLength(Entity e) {
 		try {
 			Object handle = GunAPI.getEntityHandle(e);
 			if(GunAPI.lengthField != null) {
 				try {
-					return (((Number) GunAPI.lengthField.get(handle)).doubleValue() + 0.3);
+					return ((Number) GunAPI.lengthField.get(handle)).doubleValue();
 				} catch(Throwable t2) {}
 			}
-			if(GunAPI.lengthField == null) {
-				Class<?> hc = handle.getClass();
-				while(hc != null) {
-					try {
-						Field f = hc.getDeclaredField("length");
-						f.setAccessible(true);
-						double n = ((Number) f.get(handle)).doubleValue();
-						GunAPI.lengthField = f;
-						return (n + 0.3);
-					} catch(Throwable t3) {}
-					hc = hc.getSuperclass();
-				}
+			Class<?> hc = handle.getClass();
+			while(hc != null) {
+				try {
+					Field f = hc.getDeclaredField("length");
+					f.setAccessible(true);
+					double n = ((Number) f.get(handle)).doubleValue();
+					GunAPI.lengthField = f;
+					return n;
+				} catch(Throwable t3) {}
+				hc = hc.getSuperclass();
 			}
 		} catch(Throwable t) {}
 		return GunAPI.lengthDefault;
 	}
 	
 	/*
-	 * Get entity head size
+	 * Get entity head width
 	 * 
-	 * @return Entity head size (one side)
+	 * @return Entity head width
 	 */
-	public static double getMobHeadSize(LivingEntity e) {
-		if(e instanceof Slime) {
+	public static double getHeadWidth(Entity e) {
+		if(!(e instanceof LivingEntity) || e instanceof Slime || e instanceof Silverfish) {
 			return 0;
 		}
-		return GunAPI.headDefault;
+		return GunAPI.headWidthDefault;
+	}
+	
+	/*
+	 * Get entity head height
+	 * 
+	 * @return Entity head height
+	 */
+	public static double getHeadHeight(Entity e) {
+		if(!(e instanceof LivingEntity) || e instanceof Slime || e instanceof Silverfish) {
+			return 0;
+		}
+		return GunAPI.headHeightDefault;
+	}
+	
+	/*
+	 * Get entity head length
+	 * 
+	 * @return Entity head length
+	 */
+	public static double getHeadLength(Entity e) {
+		if(!(e instanceof LivingEntity) || e instanceof Slime || e instanceof Silverfish) {
+			return 0;
+		}
+		return GunAPI.headLengthDefault;
+	}
+	
+	/*
+	 * Get entity head cord; Location head = Location#getDirection() + GunAPI.getHeadCord();
+	 * 
+	 * @return Entity head cord (loc = rotation + cord)
+	 */
+	public static double getHeadCord(Entity e) {
+		if(!(e instanceof LivingEntity)) {
+			return 0;
+		}
+		boolean isAdult = true;
+		if(e instanceof Ageable) {
+			isAdult = ((Ageable) e).isAdult();
+		}
+		if(e instanceof Wolf) {
+			return (isAdult) ? 0.4 : 0.1;
+		}
+		return 0;
 	}
 	
 	/*
@@ -341,12 +397,36 @@ public class GunAPI {
 	}
 	
 	/*
-	 * Normalize point (x, y, z) with given value, that mean
+	 * Walk given distance by given yaw
+	 * 
+	 * @return nothing. Data are stored in xy array
+	 */
+	public static void walk2D(double[] xy, double distance, double yaw) {
+		xy[0] -= (distance * Math.sin(Math.toRadians(yaw)));
+		xy[1] += (distance * Math.cos(Math.toRadians(yaw)));
+	}
+	
+	/*
+	 * Walk given distance by given yaw and pitch
+	 * 
+	 * @return nothing. Data are stored in xyz array
+	 */
+	public static void walk3D(double[] xyz, double distance, double yaw, double pitch) {
+		double[] vec = new double[3];
+		GunAPI.getDirection(vec, pitch, yaw);
+		GunAPI.normalize(vec, distance);
+		xyz[0] += vec[0];
+		xyz[1] += vec[1];
+		xyz[2] += vec[2];
+	}
+	
+	/*
+	 * Maximize point (x, y, z) with given value, that mean
 	 * biggest value with be equal to f parameter
 	 * 
 	 * @return nothing. Output is stored in xyz parameter
 	 */
-	public static void normalize(double[] xyz, double f) {
+	public static void maximize(double[] xyz, double f) {
 		double x = xyz[0];
 		double y = xyz[1];
 		double z = xyz[2];
@@ -402,14 +482,42 @@ public class GunAPI {
 	}
 	
 	/*
+	 * Normalize point (x, y, z) with given value
+	 * 
+	 * @return nothing. Output is stored in xyz parameter
+	 */
+	public static void normalize(double[] xyz, double f) {
+		double sqr = Math.sqrt((xyz[0] * xyz[0]) + (xyz[1] * xyz[1]) + (xyz[2] * xyz[2]));
+		sqr = (1 / sqr) * f;
+		xyz[0] *= sqr;
+		xyz[1] *= sqr;
+		xyz[2] *= sqr;
+	}
+	
+	/*
+	 * getDirection by entered yaw and pitch
+	 * 
+	 * @return nothing. Computed direction vector (x,y,z) is stored in the first parameter
+	 */
+	public static void getDirection(double[] out, double yaw, double pitch) {
+		double p = Math.toDegrees(pitch);
+		double y = Math.toDegrees(yaw);
+		double xz = Math.cos(p);
+
+		out[0] = (-xz * Math.sin(y));
+		out[1] = -(Math.sin(p));
+		out[2] = (xz * Math.cos(y));
+	}
+	
+	/*
 	 * Cache entities for fast & easy collide checking
 	 * 
 	 * @return nothing. Results are stored in ShootedEntity
 	 */
-	public static void cacheEntities(Collection<ShootedEntity> out, Collection<? extends Entity> in) {
-		Iterator<? extends Entity> it = in.iterator();
+	public static void cacheEntities(Collection<ShootedEntity> out, Collection<? extends Object> in) {
+		Iterator<? extends Object> it = in.iterator();
 		while(it.hasNext()) {
-			Entity e = it.next();
+			Object e = it.next();
 			if(e instanceof LivingEntity) {
 				out.add(new ShootedEntity((LivingEntity) e));
 			}
@@ -423,32 +531,8 @@ public class GunAPI {
 	 * @return nothing. Shooted entities are added into first out parameter
 	 */
 	public static void getShootedEntities(Collection<ShootedEntity> out, 
-			Collection<ShootedEntity> in, double[] loc) {
-		Iterator<ShootedEntity> it = in.iterator();
-		while(it.hasNext()) {
-			ShootedEntity sec = it.next();
-			int res = sec.collide(loc);
-			if(res == 2) {
-				sec.wasHeadshot = true;
-				out.add(sec);
-				it.remove();
-			} else if(res == 1) {
-				sec.wasHeadshot = false;
-				out.add(sec);
-				it.remove();
-			}
-		}
-	}
-	
-	/*
-	 * Get shooted entities in given vector -> radius. Add them to first out parameter 
-	 * and remove them from second parameter.
-	 * 
-	 * @return nothing. Shooted entities are added into first out parameter
-	 */
-	public static void getShootedEntities(Collection<ShootedEntity> out, 
-			Collection<ShootedEntity> in, double[] loc, double[] vec, int cycles) {
-		while(cycles-- != 0) {
+			Collection<ShootedEntity> in, double[] loc, boolean remove) {
+		if(remove) {
 			Iterator<ShootedEntity> it = in.iterator();
 			while(it.hasNext()) {
 				ShootedEntity sec = it.next();
@@ -463,9 +547,107 @@ public class GunAPI {
 					it.remove();
 				}
 			}
-			loc[0] += vec[0];
-			loc[1] += vec[1];
-			loc[2] += vec[2];
+		} else if(out instanceof Set) {
+			Iterator<ShootedEntity> it = in.iterator();
+			while(it.hasNext()) {
+				ShootedEntity sec = it.next();
+				int res = sec.collide(loc);
+				if(res == 2) {
+					sec.wasHeadshot = true;
+					out.add(sec);
+				} else if(res == 1) {
+					sec.wasHeadshot = false;
+					out.add(sec);
+				}
+			}
+		} else {
+			Iterator<ShootedEntity> it = in.iterator();
+			while(it.hasNext()) {
+				ShootedEntity sec = it.next();
+				int res = sec.collide(loc);
+				if(res == 2) {
+					sec.wasHeadshot = true;
+					if(!out.contains(sec)) {
+						out.add(sec);
+					}
+				} else if(res == 1) {
+					sec.wasHeadshot = false;
+					if(!out.contains(sec)) {
+						out.add(sec);
+					}
+				}
+			}
+		}
+	}
+	
+	/*
+	 * Get shooted entities in given vector -> radius. Add them to first out parameter 
+	 * and remove them from second parameter.
+	 * 
+	 * @return nothing. Shooted entities are added into first out parameter
+	 */
+	public static void getShootedEntities(Collection<ShootedEntity> out, 
+			Collection<ShootedEntity> in, double[] loc, double[] vec, int cycles, boolean remove) {
+		if(remove) {
+			while(cycles-- != 0) {
+				Iterator<ShootedEntity> it = in.iterator();
+				while(it.hasNext()) {
+					ShootedEntity sec = it.next();
+					int res = sec.collide(loc);
+					if(res == 2) {
+						sec.wasHeadshot = true;
+						out.add(sec);
+						it.remove();
+					} else if(res == 1) {
+						sec.wasHeadshot = false;
+						out.add(sec);
+						it.remove();
+					}
+				}
+				loc[0] += vec[0];
+				loc[1] += vec[1];
+				loc[2] += vec[2];
+			}
+		} else if(out instanceof Set) {
+			while(cycles-- != 0) {
+				Iterator<ShootedEntity> it = in.iterator();
+				while(it.hasNext()) {
+					ShootedEntity sec = it.next();
+					int res = sec.collide(loc);
+					if(res == 2) {
+						sec.wasHeadshot = true;
+						out.add(sec);
+					} else if(res == 1) {
+						sec.wasHeadshot = false;
+						out.add(sec);
+					}
+				}
+				loc[0] += vec[0];
+				loc[1] += vec[1];
+				loc[2] += vec[2];
+			}
+		} else {
+			while(cycles-- != 0) {
+				Iterator<ShootedEntity> it = in.iterator();
+				while(it.hasNext()) {
+					ShootedEntity sec = it.next();
+					int res = sec.collide(loc);
+					if(res == 2) {
+						sec.wasHeadshot = true;
+						if(!out.contains(sec)) {
+							out.add(sec);
+						}
+					} else if(res == 1) {
+						sec.wasHeadshot = false;
+						if(!out.contains(sec)) {
+							out.add(sec);
+						}
+					}
+				}
+				loc[0] += vec[0];
+				loc[1] += vec[1];
+				loc[2] += vec[2];
+			}
 		}
 	}
 	
@@ -477,21 +659,31 @@ public class GunAPI {
 	 */
 	public static void getShootedBlocks(Collection<Block> out, 
 			World w, double[] loc, double[] vec, int cycles) {
-		int[] prev = new int[] { Integer.MAX_VALUE, Integer.MAX_VALUE, Integer.MAX_VALUE };
-		int[] cur = new int[3];
-		while(cycles-- != 0) {
-			cur[0] = Location.locToBlock(loc[0]);
-			cur[1] = Location.locToBlock(loc[1]);
-			cur[2] = Location.locToBlock(loc[2]);
-			if(prev[0] != cur[0] || prev[1] != cur[1] || prev[2] != cur[2]) {
-				out.add(w.getBlockAt(cur[0], cur[1], cur[2]));
-				prev[0] = cur[0];
-				prev[1] = cur[1];
-				prev[2] = cur[2];
+		if(vec[0] >= 1 || vec[1] >= 1 || vec[2] >= 1) {
+			while(cycles-- != 0) {
+				out.add(w.getBlockAt(Location.locToBlock(loc[0]), 
+						Location.locToBlock(loc[1]), Location.locToBlock(loc[2])));
+				loc[0] += vec[0];
+				loc[1] += vec[1];
+				loc[2] += vec[2];
 			}
-			loc[0] += vec[0];
-			loc[1] += vec[1];
-			loc[2] += vec[2];
+		} else {
+			int prevx = Integer.MAX_VALUE, prevy = Integer.MAX_VALUE, prevz = Integer.MAX_VALUE;
+			int curx = Integer.MAX_VALUE, cury = Integer.MAX_VALUE, curz = Integer.MAX_VALUE;
+			while(cycles-- != 0) {
+				curx = Location.locToBlock(loc[0]);
+				cury = Location.locToBlock(loc[1]);
+				curz = Location.locToBlock(loc[2]);
+				if(prevx != curx || prevy != cury || prevz != curz) {
+					out.add(w.getBlockAt(curx, cury, curz));
+					prevx = curx;
+					prevy = cury;
+					prevz = curz;
+				}
+				loc[0] += vec[0];
+				loc[1] += vec[1];
+				loc[2] += vec[2];
+			}
 		}
 	}
 	

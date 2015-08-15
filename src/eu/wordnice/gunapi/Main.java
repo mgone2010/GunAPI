@@ -72,13 +72,13 @@ public class Main extends JavaPlugin implements Listener {
 				
 				double[] location = new double[] {loc.getX(), loc.getY(), loc.getZ()}; //double[3] location
 				double[] vector = new double[] {direct.getX(), direct.getY(), direct.getZ()}; //double[3] direction
-				GunAPI.normalize(vector, 0.1); //For better search (smaller = better)
+				GunAPI.maximize(vector, 0.1); //For better search (smaller = better)
 				
 				int radius = 50;
 				int cycles = GunAPI.cyclesFromRadius(vector, radius);
 				
 				Set<ShootedEntity> shoted = new HashSet<ShootedEntity>(); //There will be saved shoted entities
-				GunAPI.getShootedEntities(shoted, ents, location, vector, cycles);
+				GunAPI.getShootedEntities(shoted, ents, location, vector, cycles, true);
 				
 				boolean shootSomeone = false;
 				

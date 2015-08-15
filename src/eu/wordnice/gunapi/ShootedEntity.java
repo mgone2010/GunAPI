@@ -50,16 +50,18 @@ public class ShootedEntity {
 		
 		//Head
 		Location lo = ent.getEyeLocation();
-		double size_head = GunAPI.getMobHeadSize(ent) / 2;
-		this.head_hy = (lo.getY() + size_head);
-		this.head_ly = (lo.getY() - size_head);
+		double size_headx = GunAPI.getHeadWidth(ent) / 2;
+		double size_heady = GunAPI.getHeadLength(ent) / 2;
+		double size_headz = GunAPI.getHeadHeight(ent) / 2;
+		this.head_hy = (lo.getY() + size_heady);
+		this.head_ly = (lo.getY() - size_heady);
 		
-		double val1 = (lo.getX() - size_head);
-		double val2 = (lo.getX() + size_head);
+		double val1 = (lo.getX() - size_headx);
+		double val2 = (lo.getX() + size_headx);
 		this.head_x = new double[] {val1, val2, val2, val1};
 		
-		val1 = (lo.getZ() - size_head);
-		val2 = (lo.getZ() + size_head);
+		val1 = (lo.getZ() - size_headz);
+		val2 = (lo.getZ() + size_headz);
 		this.head_z = new double[] {val1, val1, val2, val2};
 		
 		GunAPI.rotateRectangle2D(this.head_x, this.head_z, GunAPI.correctAngle(lo.getYaw()));
@@ -67,9 +69,9 @@ public class ShootedEntity {
 		
 		//Body
 		lo = ent.getLocation();
-		double size_x = GunAPI.getMobWidth(ent) / 2;
-		double size_y = GunAPI.getMobLength(ent) - (2 * size_head);
-		double size_z = GunAPI.getMobHeight(ent) / 2;
+		double size_x = GunAPI.getWidth(ent) / 2;
+		double size_y = (GunAPI.getLength(ent) - (2 * size_heady));
+		double size_z = GunAPI.getHeight(ent) / 2;
 		
 		this.body_hy = (lo.getY() + size_y);
 		this.body_ly = lo.getY();
