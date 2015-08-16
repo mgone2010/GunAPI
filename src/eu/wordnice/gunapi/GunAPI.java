@@ -315,7 +315,7 @@ public class GunAPI {
 	 * @return Modified angle (yaw)
 	 */
 	public static double correctAngle(double in) {
-		return (360 - ((in + 360) % 360)) + 90;
+		return (360 - (in % 360));
 	}
 	
 	/*
@@ -407,17 +407,17 @@ public class GunAPI {
 	}
 	
 	/*
-	 * Walk given distance by given yaw and pitch
+	 * Walk given distance by given yaw and pitch. Walked location is stored in buff,
+	 * and appended to xyz parameter.
 	 * 
-	 * @return nothing. Data are stored in xyz array
+	 * @return nothing. Data are stored in vec array
 	 */
-	public static void walk3D(double[] xyz, double distance, double yaw, double pitch) {
-		double[] vec = new double[3];
-		GunAPI.getDirection(vec, pitch, yaw);
-		GunAPI.normalize(vec, distance);
-		xyz[0] += vec[0];
-		xyz[1] += vec[1];
-		xyz[2] += vec[2];
+	public static void walk3D(double[] buff, double[] xyz, double distance, double yaw, double pitch) {
+		GunAPI.getDirection(buff, pitch, yaw);
+		GunAPI.normalize(buff, distance);
+		xyz[0] += buff[0];
+		xyz[1] += buff[1];
+		xyz[2] += buff[2];
 	}
 	
 	/*
@@ -510,6 +510,21 @@ public class GunAPI {
 	}
 	
 	/*
+	 * Cache living entities for fast & easy collide checking
+	 * 
+	 * @return nothing. Results are stored in ShootedEntity
+	 */
+	public static void cacheLivingEntities(Collection<ShootedEntity> out, Collection<? extends Object> in) {
+		Iterator<? extends Object> it = in.iterator();
+		while(it.hasNext()) {
+			Object e = it.next();
+			if(e instanceof LivingEntity) {
+				out.add(new ShootedEntity((LivingEntity) e));
+			}
+		}
+	}
+	
+	/*
 	 * Cache entities for fast & easy collide checking
 	 * 
 	 * @return nothing. Results are stored in ShootedEntity
@@ -518,8 +533,8 @@ public class GunAPI {
 		Iterator<? extends Object> it = in.iterator();
 		while(it.hasNext()) {
 			Object e = it.next();
-			if(e instanceof LivingEntity) {
-				out.add(new ShootedEntity((LivingEntity) e));
+			if(e instanceof Entity) {
+				out.add(new ShootedEntity((Entity) e));
 			}
 		}
 	}

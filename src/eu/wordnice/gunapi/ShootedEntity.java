@@ -25,6 +25,7 @@
 package eu.wordnice.gunapi;
 
 import org.bukkit.Location;
+import org.bukkit.entity.Entity;
 import org.bukkit.entity.LivingEntity;
 
 public class ShootedEntity {
@@ -37,22 +38,33 @@ public class ShootedEntity {
 	public double body_hy;
 	public double body_ly;
 	public double[] body_z; //4
-	public LivingEntity ent;
+	public Entity ent;
 	public boolean wasHeadshot;
 	
 	/*
-	 * Compute coordinates of LivingEntities for fast checking
+	 * Compute coordinates of Entities for fast checking
 	 * 
 	 * @return new Object for fast & easy collide checking
 	 */
-	public ShootedEntity(LivingEntity ent) {
+	public ShootedEntity(Entity ent) {
 		this.ent = ent;
 		
-		//Head
-		Location lo = ent.getEyeLocation();
 		double size_headx = GunAPI.getHeadWidth(ent) / 2;
 		double size_heady = GunAPI.getHeadLength(ent) / 2;
 		double size_headz = GunAPI.getHeadHeight(ent) / 2;
+		
+		double size_x = GunAPI.getWidth(ent) / 2;
+		double size_y = (GunAPI.getLength(ent) - (2 * size_heady));
+		double size_z = GunAPI.getHeight(ent) / 2;
+		
+		//Head
+		Location lo = null;
+		if(ent instanceof LivingEntity) {
+			lo = ((LivingEntity) ent).getEyeLocation();
+		} else {
+			lo = ent.getLocation().add(0, size_y, 0);
+		}
+		
 		this.head_hy = (lo.getY() + size_heady);
 		this.head_ly = (lo.getY() - size_heady);
 		
@@ -69,9 +81,6 @@ public class ShootedEntity {
 		
 		//Body
 		lo = ent.getLocation();
-		double size_x = GunAPI.getWidth(ent) / 2;
-		double size_y = (GunAPI.getLength(ent) - (2 * size_heady));
-		double size_z = GunAPI.getHeight(ent) / 2;
 		
 		this.body_hy = (lo.getY() + size_y);
 		this.body_ly = lo.getY();

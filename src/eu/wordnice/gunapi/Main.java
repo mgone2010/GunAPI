@@ -39,6 +39,7 @@ import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerToggleSneakEvent;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.map.MapRenderer;
 import org.bukkit.map.MapView;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.Vector;
@@ -58,6 +59,7 @@ public class Main extends JavaPlugin implements Listener {
 	
 	public MapView mw = null;
 	
+	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void onPlayerSneak(PlayerToggleSneakEvent event) {
 		Player p = event.getPlayer();
@@ -68,7 +70,7 @@ public class Main extends JavaPlugin implements Listener {
 				Vector direct = loc.getDirection();
 				
 				Set<ShootedEntity> ents = new HashSet<ShootedEntity>(); //There will be cached all living entities from world
-				GunAPI.cacheEntities(ents, loc.getWorld().getEntities());
+				GunAPI.cacheLivingEntities(ents, loc.getWorld().getEntities()); //Load living entities
 				
 				double[] location = new double[] {loc.getX(), loc.getY(), loc.getZ()}; //double[3] location
 				double[] vector = new double[] {direct.getX(), direct.getY(), direct.getZ()}; //double[3] direction
@@ -83,13 +85,17 @@ public class Main extends JavaPlugin implements Listener {
 				boolean shootSomeone = false;
 				
 				Iterator<ShootedEntity> it = shoted.iterator();
+				LivingEntity first = null;
 				while(it.hasNext()) {
 					ShootedEntity se = it.next();
-					LivingEntity le = se.ent;
+					LivingEntity le = (LivingEntity) se.ent;
 					if(le.equals(p)) {
 						continue;
 					}
 					shootSomeone = true;
+					if(first == null) {
+						first = le;
+					}
 					if(le instanceof Player) {
 						Player sp = (Player) le;
 						p.sendMessage(ChatColor.YELLOW + "You shoot player " + sp.getName() + ", headshot: " + se.wasHeadshot);
@@ -104,6 +110,23 @@ public class Main extends JavaPlugin implements Listener {
 				}
 				if(!shootSomeone) {
 					p.sendMessage(ChatColor.GREEN + "Uf, you didn't hurt anyone!");
+				} else {
+					if(this.mw == null) {
+						this.mw = Bukkit.createMap(loc.getWorld());
+						this.mw.addRenderer(new AreaRenderer(first));
+						p.getInventory().addItem(new ItemStack(Material.MAP, 1, this.mw.getId()));
+					} else {
+						Iterator<MapRenderer> mit = this.mw.getRenderers().iterator();
+						while(mit.hasNext()) {
+							MapRenderer mr = mit.next();
+							if(mr instanceof AreaRenderer) {
+								AreaRenderer ar = (AreaRenderer) mr;
+								if(ar.ent.isDead()) {
+									ar.ent = first;
+								}
+							}
+						}
+					}
 				}
 			}
 		}

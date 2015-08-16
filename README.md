@@ -23,28 +23,32 @@ GunAPI provides simple, low-level oriented API for getting blocks and entities o
 				Vector direct = loc.getDirection();
 				
 				Set<ShootedEntity> ents = new HashSet<ShootedEntity>(); //There will be cached all living entities from world
-				GunAPI.cacheEntities(ents, loc.getWorld().getEntities());
+				GunAPI.cacheLivingEntities(ents, loc.getWorld().getEntities()); //Load living entities
 				
 				double[] location = new double[] {loc.getX(), loc.getY(), loc.getZ()}; //double[3] location
 				double[] vector = new double[] {direct.getX(), direct.getY(), direct.getZ()}; //double[3] direction
-				GunAPI.normalize(vector, 0.1); //For better search (smaller = better)
+				GunAPI.maximize(vector, 0.1); //For better search (smaller = better)
 				
 				int radius = 50;
 				int cycles = GunAPI.cyclesFromRadius(vector, radius);
 				
 				Set<ShootedEntity> shoted = new HashSet<ShootedEntity>(); //There will be saved shoted entities
-				GunAPI.getShootedEntities(shoted, ents, location, vector, cycles);
+				GunAPI.getShootedEntities(shoted, ents, location, vector, cycles, true);
 				
 				boolean shootSomeone = false;
 				
 				Iterator<ShootedEntity> it = shoted.iterator();
+				LivingEntity first = null;
 				while(it.hasNext()) {
 					ShootedEntity se = it.next();
-					LivingEntity le = se.ent;
+					LivingEntity le = (LivingEntity) se.ent;
 					if(le.equals(p)) {
 						continue;
 					}
 					shootSomeone = true;
+					if(first == null) {
+						first = le;
+					}
 					if(le instanceof Player) {
 						Player sp = (Player) le;
 						p.sendMessage(ChatColor.YELLOW + "You shoot player " + sp.getName() + ", headshot: " + se.wasHeadshot);
@@ -63,7 +67,6 @@ GunAPI provides simple, low-level oriented API for getting blocks and entities o
 			}
 		}
 	}
-
 ```
 
 
