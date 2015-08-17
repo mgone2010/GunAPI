@@ -1,5 +1,5 @@
 name: GunAPI
-version: 1.3.0
+version: 1.4.0
 author: wordnice
 main: eu.wordnice.gunapi.Main
 description: API for getting shooted blocks and entities

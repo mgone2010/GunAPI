@@ -27,7 +27,7 @@ public class AreaRenderer extends MapRenderer {
 		}
 		this.next = System.currentTimeMillis() + 100L;
 		
-		ShootedEntity se = new ShootedEntity(this.ent);
+		ShootedEntity se = new ShootedEntity(new double[2], new double[2], this.ent);
 				
 		BufferedImage bf = new BufferedImage(128, 128, BufferedImage.TYPE_INT_ARGB);
 		Graphics g = bf.getGraphics();

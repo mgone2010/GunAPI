@@ -46,6 +46,8 @@ import org.bukkit.util.Vector;
 
 public class Main extends JavaPlugin implements Listener {
 	
+	public MapView mw = null;
+	
 	@Override
 	public void onEnable() {
 		Bukkit.getPluginManager().registerEvents(this, this);
@@ -56,9 +58,7 @@ public class Main extends JavaPlugin implements Listener {
 	public void onDisable() {
 		this.getLogger().info("GunAPI by wordnice was disabled!");
 	}
-	
-	public MapView mw = null;
-	
+		
 	@SuppressWarnings("deprecation")
 	@EventHandler
 	public void onPlayerSneak(PlayerToggleSneakEvent event) {

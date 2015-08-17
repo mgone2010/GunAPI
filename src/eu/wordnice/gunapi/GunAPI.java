@@ -35,6 +35,7 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.Ageable;
 import org.bukkit.entity.Entity;
+import org.bukkit.entity.EntityType;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.entity.Silverfish;
 import org.bukkit.entity.Slime;
@@ -46,9 +47,9 @@ public class GunAPI {
 	 * Cached fields - make reflection faster
 	 */
 	private static Method handleMethod = null;
-	private static Field lengthField = null;
-	private static Field heightField = null;
 	private static Field widthField = null;
+	private static Field heightField = null;
+	private static Field lengthField = null;
 	
 	private static double widthDefault = 0.9;
 	private static double heightDefault = 0.4;
@@ -57,6 +58,15 @@ public class GunAPI {
 	private static double headWidthDefault = 0.5;
 	private static double headHeightDefault = 0.5;
 	private static double headLengthDefault = 0.55;
+	
+	/*
+	 * Cached sizes - make everything faster
+	 * Stored by Enum#ordinal()
+	 */
+	private static int entityTypesCount = EntityType.values().length;
+	private static double[] widths = new double[entityTypesCount * 2];
+	private static double[] heights = new double[entityTypesCount * 2];
+	private static double[] lengths = new double[entityTypesCount * 2];
 	
 	/*
 	 * walk(...) and walk3D(...) method parameter appenders
@@ -167,11 +177,24 @@ public class GunAPI {
 	 * @return Entity width
 	 */
 	public static double getWidth(Entity e) {
+		int type = e.getType().ordinal();
+		double rv = 0;
+		if(!(e instanceof Slime)) {
+			if(e instanceof Ageable && !((Ageable) e).isAdult()) {
+				type += GunAPI.entityTypesCount;
+			}
+			rv = GunAPI.widths[type];
+			if(rv != 0) {
+				return rv;
+			}
+		}
 		try {
 			Object handle = GunAPI.getEntityHandle(e);
 			if(GunAPI.widthField != null) {
 				try {
-					return (((Number) GunAPI.widthField.get(handle)).doubleValue() + 0.3);
+					rv = (((Number) GunAPI.widthField.get(handle)).doubleValue() + 0.3);
+					GunAPI.widths[type] = rv;
+					return rv;
 				} catch(Throwable t2) {}
 			}
 			Class<?> hc = handle.getClass();
@@ -179,14 +202,17 @@ public class GunAPI {
 				try {
 					Field f = hc.getDeclaredField("width");
 					f.setAccessible(true);
-					double n = ((Number) f.get(handle)).doubleValue();
+					rv = (((Number) f.get(handle)).doubleValue() + 0.3);
 					GunAPI.widthField = f;
-					return (n + 0.3);
+					GunAPI.widths[type] = rv;
+					return rv;
 				} catch(Throwable t3) {}
 				hc = hc.getSuperclass();
 			}
 		} catch(Throwable t) {}
-		return GunAPI.widthDefault;
+		rv = GunAPI.widthDefault;
+		GunAPI.widths[type] = rv;
+		return rv;
 	}
 	
 	/*
@@ -195,16 +221,28 @@ public class GunAPI {
 	 * @return Entity height
 	 */
 	public static double getHeight(Entity e) {
+		int type = e.getType().ordinal();
+		double rv = 0;
+		if(!(e instanceof Slime)) {
+			if(e instanceof Ageable && !((Ageable) e).isAdult()) {
+				type += GunAPI.entityTypesCount;
+			}
+			rv = GunAPI.heights[type];
+			if(rv != 0) {
+				return rv;
+			}
+		}
 		try {
 			try {
 				Object handle = GunAPI.getEntityHandle(e);
 				if(GunAPI.heightField != null) {
 					try {
-						double ret = ((Number) GunAPI.heightField.get(handle)).doubleValue();
-						if(ret != 0) {
-							return ret;
+						rv = ((Number) GunAPI.heightField.get(handle)).doubleValue();
+						if(rv == 0) {
+							rv = GunAPI.heightDefault;
 						}
-						return GunAPI.heightDefault;
+						GunAPI.heights[type] = rv;
+						return rv;
 					} catch(Throwable t2) {}
 				}
 				Class<?> hc = handle.getClass();
@@ -212,18 +250,21 @@ public class GunAPI {
 					try {
 						Field f = hc.getDeclaredField("height");
 						f.setAccessible(true);
-						double n = ((Number) f.get(handle)).doubleValue();
+						rv = ((Number) f.get(handle)).doubleValue();
 						GunAPI.heightField = f;
-						if(n != 0) {
-							return n;
+						if(rv == 0) {
+							rv = GunAPI.heightDefault;
 						}
-						return GunAPI.heightDefault;
+						GunAPI.heights[type] = rv;
+						return rv;
 					} catch(Throwable t3) {}
 					hc = hc.getSuperclass();
 				}
 			} catch(Throwable t) {}
 		} catch(Throwable t) {}
-		return GunAPI.heightDefault;
+		rv = GunAPI.heightDefault;
+		GunAPI.heights[type] = rv;
+		return rv;
 	}
 	
 	/*
@@ -232,11 +273,24 @@ public class GunAPI {
 	 * @return Entity length
 	 */
 	public static double getLength(Entity e) {
+		int type = e.getType().ordinal();
+		double rv = 0;
+		if(!(e instanceof Slime)) {
+			if(e instanceof Ageable && !((Ageable) e).isAdult()) {
+				type += GunAPI.entityTypesCount;
+			}
+			rv = GunAPI.lengths[type];
+			if(rv != 0) {
+				return rv;
+			}
+		}
 		try {
 			Object handle = GunAPI.getEntityHandle(e);
 			if(GunAPI.lengthField != null) {
 				try {
-					return ((Number) GunAPI.lengthField.get(handle)).doubleValue();
+					rv = ((Number) GunAPI.lengthField.get(handle)).doubleValue();
+					GunAPI.lengths[type] = rv;
+					return rv;
 				} catch(Throwable t2) {}
 			}
 			Class<?> hc = handle.getClass();
@@ -244,14 +298,17 @@ public class GunAPI {
 				try {
 					Field f = hc.getDeclaredField("length");
 					f.setAccessible(true);
-					double n = ((Number) f.get(handle)).doubleValue();
+					rv = ((Number) f.get(handle)).doubleValue();
 					GunAPI.lengthField = f;
-					return n;
+					GunAPI.lengths[type] = rv;
+					return rv;
 				} catch(Throwable t3) {}
 				hc = hc.getSuperclass();
 			}
 		} catch(Throwable t) {}
-		return GunAPI.lengthDefault;
+		rv = GunAPI.lengthDefault;
+		GunAPI.lengths[type] = rv;
+		return rv;
 	}
 	
 	/*
@@ -334,11 +391,12 @@ public class GunAPI {
 	}
 	
 	/*
-	 * Rotate 4 points (x, y) stored in first and second double[] parameters by given angle
+	 * Rotate 4 points (x, y) stored in first and second double[] parameters by given angle.
+	 * Paremeters v1 and v2 must be double arrays with minimal size 2.
 	 * 
 	 * @return nothing. Values are stored in x and y arrays
 	 */
-	public static void rotateRectangle2D(double[] x, double[] y, double angle) {
+	public static void rotateRectangle2D(double[] v1, double[] v2, double[] x, double[] y, double angle) {
 		double ox1 = x[0];
 		double oy1 = y[0];
 		double ox2 = x[1];
@@ -356,8 +414,10 @@ public class GunAPI {
 		double hx2 = x2 / 2d;
 		double hz2 = z2 / 2d;
 		
-		double[] v1 = new double[] {hx1, hz1};
-		double[] v2 = new double[] {hx2, hz2};
+		v1[0] = hx1;
+		v1[1] = hz1;
+		v2[0] = hx2;
+		v2[1] = hz2;
 		
 		GunAPI.rotatePoint2D(v1, angle);
 		GunAPI.rotatePoint2D(v2, angle);
@@ -516,10 +576,12 @@ public class GunAPI {
 	 */
 	public static void cacheLivingEntities(Collection<ShootedEntity> out, Collection<? extends Object> in) {
 		Iterator<? extends Object> it = in.iterator();
+		double[] buff1 = new double[2];
+		double[] buff2 = new double[2];
 		while(it.hasNext()) {
 			Object e = it.next();
 			if(e instanceof LivingEntity) {
-				out.add(new ShootedEntity((LivingEntity) e));
+				out.add(new ShootedEntity(buff1, buff2, (LivingEntity) e));
 			}
 		}
 	}
@@ -531,10 +593,12 @@ public class GunAPI {
 	 */
 	public static void cacheEntities(Collection<ShootedEntity> out, Collection<? extends Object> in) {
 		Iterator<? extends Object> it = in.iterator();
+		double[] buff1 = new double[2];
+		double[] buff2 = new double[2];
 		while(it.hasNext()) {
 			Object e = it.next();
 			if(e instanceof Entity) {
-				out.add(new ShootedEntity((Entity) e));
+				out.add(new ShootedEntity(buff1, buff2, (Entity) e));
 			}
 		}
 	}

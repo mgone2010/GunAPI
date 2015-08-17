@@ -46,7 +46,7 @@ public class ShootedEntity {
 	 * 
 	 * @return new Object for fast & easy collide checking
 	 */
-	public ShootedEntity(Entity ent) {
+	public ShootedEntity(double[] buff1, double[] buff2, Entity ent) {
 		this.ent = ent;
 		
 		double size_headx = GunAPI.getHeadWidth(ent) / 2;
@@ -76,7 +76,7 @@ public class ShootedEntity {
 		val2 = (lo.getZ() + size_headz);
 		this.head_z = new double[] {val1, val1, val2, val2};
 		
-		GunAPI.rotateRectangle2D(this.head_x, this.head_z, GunAPI.correctAngle(lo.getYaw()));
+		GunAPI.rotateRectangle2D(buff1, buff2, this.head_x, this.head_z, GunAPI.correctAngle(lo.getYaw()));
 	
 		
 		//Body
@@ -93,7 +93,7 @@ public class ShootedEntity {
 		val2 = (lo.getZ() + size_z);
 		this.body_z = new double[] {val1, val1, val2, val2};
 		
-		GunAPI.rotateRectangle2D(this.body_x, this.body_z, GunAPI.correctAngle(lo.getYaw()));
+		GunAPI.rotateRectangle2D(buff1, buff2, this.body_x, this.body_z, GunAPI.correctAngle(lo.getYaw()));
 	}
 	
 	/*
@@ -114,6 +114,23 @@ public class ShootedEntity {
 		return 0;
 	}
 	
-	
+	/*
+	 * Override
+	 * Check if input object has same data
+	 * 
+	 * @return `true` if input object has same data as this
+	 */
+	@Override
+	public boolean equals(Object o) {
+		if(!(o instanceof ShootedEntity)) {
+			return false;
+		}
+		ShootedEntity se = (ShootedEntity) o;
+		return (this.body_hy == se.body_hy && this.body_ly == se.body_ly
+				&& this.head_hy == se.head_hy && this.head_ly == se.head_ly
+				&& this.ent.equals(se.ent) &&
+				(this.body_x[0] == se.body_x[0] && this.body_x[1] == se.body_x[1]
+						&& this.body_x[2] == se.body_x[2] && this.body_x[3] == se.body_x[3]));
+	}
 	
 }
